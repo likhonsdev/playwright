@@ -96,7 +96,7 @@ async def shutdown_sessions():
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
-    base_url = "https://playwright-bqap.onrender.com"
+    base_url = str(request.url).rstrip('/')
     
     html_content = f"""
     <!DOCTYPE html>
@@ -104,7 +104,7 @@ def root(request: Request):
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Browser Agent API Documentation</title>
+        <title>AI Browser Agent API - Swagger-Style Documentation</title>
         <style>
             * {{
                 margin: 0;
@@ -113,308 +113,553 @@ def root(request: Request):
             }}
             
             body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 line-height: 1.6;
-                color: #333;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #1a1a1a;
+                background: #f8fafc;
                 min-height: 100vh;
-                padding: 20px;
             }}
             
             .container {{
-                max-width: 1200px;
+                max-width: 1400px;
                 margin: 0 auto;
                 background: white;
-                border-radius: 15px;
-                box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                overflow: hidden;
+                min-height: 100vh;
+                box-shadow: 0 0 20px rgba(0,0,0,0.05);
             }}
             
             .header {{
-                background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+                background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
                 color: white;
-                padding: 40px;
-                text-align: center;
+                padding: 2rem;
+                border-bottom: 1px solid #e5e7eb;
             }}
             
             .header h1 {{
                 font-size: 2.5rem;
-                margin-bottom: 10px;
-                font-weight: 300;
+                margin-bottom: 0.5rem;
+                font-weight: 700;
             }}
             
-            .header p {{
-                font-size: 1.2rem;
+            .header .subtitle {{
+                font-size: 1.125rem;
                 opacity: 0.9;
+                margin-bottom: 1rem;
             }}
             
-            .status-badge {{
-                display: inline-block;
-                background: #27ae60;
+            .badges {{
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }}
+            
+            .badge {{
+                background: rgba(255,255,255,0.2);
                 color: white;
-                padding: 8px 16px;
-                border-radius: 25px;
-                font-size: 0.9rem;
-                margin-top: 15px;
+                padding: 0.25rem 0.75rem;
+                border-radius: 9999px;
+                font-size: 0.875rem;
+                font-weight: 500;
+            }}
+            
+            .nav-tabs {{
+                background: white;
+                border-bottom: 1px solid #e5e7eb;
+                padding: 0 2rem;
+                display: flex;
+                gap: 2rem;
+            }}
+            
+            .nav-tab {{
+                padding: 1rem 0;
+                border-bottom: 2px solid transparent;
+                color: #6b7280;
+                text-decoration: none;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+            }}
+            
+            .nav-tab.active {{
+                color: #1e40af;
+                border-bottom-color: #1e40af;
             }}
             
             .content {{
-                padding: 40px;
+                padding: 2rem;
+                max-height: 70vh;
+                overflow-y: auto;
             }}
             
-            .section {{
-                margin-bottom: 40px;
+            .tab-content {{
+                display: none;
             }}
             
-            .section h2 {{
-                color: #2c3e50;
-                font-size: 1.8rem;
-                margin-bottom: 20px;
-                padding-bottom: 10px;
-                border-bottom: 3px solid #3498db;
+            .tab-content.active {{
+                display: block;
             }}
             
-            .quick-links {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                margin-bottom: 40px;
+            .endpoint-group {{
+                margin-bottom: 2rem;
             }}
             
-            .quick-link {{
-                background: #f8f9fa;
-                padding: 20px;
-                border-radius: 10px;
-                text-align: center;
-                border: 2px solid transparent;
-                transition: all 0.3s ease;
-            }}
-            
-            .quick-link:hover {{
-                border-color: #3498db;
-                transform: translateY(-5px);
-                box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            }}
-            
-            .quick-link a {{
-                color: #3498db;
-                text-decoration: none;
+            .endpoint-group h3 {{
+                color: #1f2937;
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
                 font-weight: 600;
-                font-size: 1.1rem;
-            }}
-            
-            .quick-link p {{
-                margin-top: 10px;
-                color: #666;
-                font-size: 0.9rem;
             }}
             
             .endpoint {{
-                background: #f8f9fa;
-                border-radius: 10px;
-                padding: 20px;
-                margin-bottom: 20px;
-                border-left: 5px solid #3498db;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                overflow: hidden;
+            }}
+            
+            .endpoint-header {{
+                background: white;
+                padding: 1rem;
+                border-bottom: 1px solid #e5e7eb;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                transition: background 0.2s;
+            }}
+            
+            .endpoint-header:hover {{
+                background: #f9fafb;
             }}
             
             .method {{
-                display: inline-block;
-                padding: 4px 12px;
-                border-radius: 20px;
-                font-weight: bold;
-                font-size: 0.8rem;
-                margin-right: 10px;
+                padding: 0.25rem 0.75rem;
+                border-radius: 0.25rem;
+                font-weight: 700;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                min-width: 4rem;
+                text-align: center;
             }}
             
             .method-get {{
-                background: #27ae60;
+                background: #10b981;
                 color: white;
             }}
             
             .method-post {{
-                background: #e74c3c;
+                background: #3b82f6;
                 color: white;
+            }}
+            
+            .endpoint-path {{
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-weight: 600;
+                color: #1f2937;
+            }}
+            
+            .endpoint-description {{
+                color: #6b7280;
+                flex: 1;
+            }}
+            
+            .endpoint-body {{
+                padding: 1rem;
+                background: white;
+                display: none;
+            }}
+            
+            .endpoint-body.expanded {{
+                display: block;
             }}
             
             .code-block {{
-                background: #2c3e50;
-                color: #ecf0f1;
-                padding: 15px;
-                border-radius: 8px;
-                font-family: 'Courier New', monospace;
-                font-size: 0.9rem;
-                margin: 10px 0;
+                background: #1f2937;
+                color: #f3f4f6;
+                padding: 1rem;
+                border-radius: 0.375rem;
+                font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+                font-size: 0.875rem;
                 overflow-x: auto;
+                margin: 0.5rem 0;
+                white-space: pre;
             }}
             
-            .example-section {{
-                background: #ecf0f1;
-                padding: 25px;
-                border-radius: 10px;
-                margin-top: 30px;
-            }}
-            
-            .step {{
-                background: white;
-                padding: 15px;
-                border-radius: 8px;
-                margin-bottom: 15px;
-                border-left: 4px solid #3498db;
-            }}
-            
-            .step h4 {{
-                color: #2c3e50;
-                margin-bottom: 10px;
-            }}
-            
-            .tech-info {{
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
-                margin-top: 20px;
-            }}
-            
-            .tech-item {{
-                background: #3498db;
+            .try-button {{
+                background: #1e40af;
                 color: white;
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 0.375rem;
+                font-weight: 500;
+                cursor: pointer;
+                margin-top: 0.5rem;
+                transition: background 0.2s;
             }}
             
-            .tech-item strong {{
-                display: block;
-                font-size: 1.1rem;
-                margin-bottom: 5px;
+            .try-button:hover {{
+                background: #1d4ed8;
+            }}
+            
+            .ai-section {{
+                background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+                color: white;
+                padding: 1.5rem;
+                border-radius: 0.5rem;
+                margin-bottom: 2rem;
+            }}
+            
+            .ai-section h3 {{
+                font-size: 1.25rem;
+
+
+@app.get("/agent/system-check")
+async def system_check():
+    """Check system dependencies and Playwright installation status"""
+    try:
+        import subprocess
+        import os
+        
+        # Check if we're on Render
+        is_render = is_render_environment()
+        
+        # Check Python and pip
+        python_version = subprocess.run([sys.executable, "--version"], capture_output=True, text=True)
+        pip_version = subprocess.run([sys.executable, "-m", "pip", "--version"], capture_output=True, text=True)
+        
+        # Check Playwright installation
+        playwright_check = subprocess.run([sys.executable, "-m", "playwright", "--version"], capture_output=True, text=True)
+        
+        # Check if chromium executable exists
+        try:
+            playwright = await async_playwright().start()
+            browser_config = get_browser_config()
+            browser = await playwright.chromium.launch(**browser_config)
+            await browser.close()
+            await playwright.stop()
+            browser_status = "✅ Chromium available"
+        except Exception as e:
+            browser_status = f"❌ Chromium issue: {str(e)}"
+        
+        return {
+            "environment": "render" if is_render else "local",
+            "python_version": python_version.stdout.strip(),
+            "pip_version": pip_version.stdout.strip(),
+            "playwright_version": playwright_check.stdout.strip() if playwright_check.returncode == 0 else "Not installed",
+            "browser_status": browser_status,
+            "environment_vars": {
+                "RENDER": os.getenv("RENDER"),
+                "RENDER_SERVICE_ID": os.getenv("RENDER_SERVICE_ID"),
+                "PORT": os.getenv("PORT")
+            }
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+                margin-bottom: 0.5rem;
+            }}
+            
+            .workflow-grid {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }}
+            
+            .workflow-card {{
+                background: rgba(255,255,255,0.1);
+                padding: 1rem;
+                border-radius: 0.375rem;
+                border: 1px solid rgba(255,255,255,0.2);
+            }}
+            
+            .workflow-card h4 {{
+                margin-bottom: 0.5rem;
+                font-weight: 600;
+            }}
+            
+            .response-example {{
+                background: #f0fdf4;
+                border: 1px solid #bbf7d0;
+                padding: 1rem;
+                border-radius: 0.375rem;
+                margin-top: 0.5rem;
+            }}
+            
+            .status-indicator {{
+                display: inline-block;
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #10b981;
+                margin-right: 0.5rem;
             }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <h1>🤖 Browser Agent API</h1>
-                <p>Professional browser automation service using Playwright</p>
-                <div class="status-badge">✅ Online & Ready</div>
+                <h1>🤖 AI Browser Agent API</h1>
+                <p class="subtitle">Professional Playwright automation service designed for AI agents and developers</p>
+                <div class="badges">
+                    <span class="badge"><span class="status-indicator"></span>Online</span>
+                    <span class="badge">FastAPI</span>
+                    <span class="badge">Playwright</span>
+                    <span class="badge">{'Render Cloud' if is_render_environment() else 'Local Dev'}</span>
+                    <span class="badge">{'Headless Mode' if get_browser_config()["headless"] else 'Headful Mode'}</span>
+                </div>
+            </div>
+            
+            <div class="nav-tabs">
+                <a href="#" class="nav-tab active" onclick="showTab('endpoints')">API Endpoints</a>
+                <a href="#" class="nav-tab" onclick="showTab('ai-guide')">AI Integration</a>
+                <a href="#" class="nav-tab" onclick="showTab('examples')">Examples</a>
+                <a href="{base_url}/docs" target="_blank" class="nav-tab">Swagger UI</a>
             </div>
             
             <div class="content">
-                <div class="section">
-                    <h2>📚 Quick Access</h2>
-                    <div class="quick-links">
-                        <div class="quick-link">
-                            <a href="{base_url}/docs" target="_blank">📖 Interactive Docs</a>
-                            <p>Swagger UI with live testing</p>
-                        </div>
-                        <div class="quick-link">
-                            <a href="{base_url}/redoc" target="_blank">📋 ReDoc</a>
-                            <p>Clean API documentation</p>
-                        </div>
-                        <div class="quick-link">
-                            <a href="{base_url}/health" target="_blank">❤️ Health Check</a>
-                            <p>Service status and info</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="section">
-                    <h2>🛠️ API Endpoints</h2>
-                    
-                    <div class="endpoint">
-                        <span class="method method-post">POST</span>
-                        <strong>/agent/visit</strong> - Start browser session and visit URL
-                        <div class="code-block">curl -X POST "{base_url}/agent/visit" \\
-  -H "Content-Type: application/json" \\
-  -d '{{"url": "https://example.com"}}'</div>
+                <div id="endpoints" class="tab-content active">
+                    <div class="ai-section">
+                        <h3>🎯 Perfect for AI Agents</h3>
+                        <p>This API is optimized for AI models and agents. Use natural language descriptions and the AI will understand how to interact with web pages through this service.</p>
                     </div>
                     
-                    <div class="endpoint">
-                        <span class="method method-get">GET</span>
-                        <strong>/agent/screenshot</strong> - Take full-page screenshot
-                        <div class="code-block">curl "{base_url}/agent/screenshot?session_id=YOUR_SESSION_ID"</div>
-                    </div>
-                    
-                    <div class="endpoint">
-                        <span class="method method-post">POST</span>
-                        <strong>/agent/click</strong> - Click element by CSS selector
-                        <div class="code-block">curl -X POST "{base_url}/agent/click" \\
-  -H "Content-Type: application/json" \\
-  -d '{{"session_id": "YOUR_SESSION_ID", "selector": "button"}}'</div>
-                    </div>
-                    
-                    <div class="endpoint">
-                        <span class="method method-post">POST</span>
-                        <strong>/agent/type</strong> - Type text into form field
-                        <div class="code-block">curl -X POST "{base_url}/agent/type" \\
-  -H "Content-Type: application/json" \\
-  -d '{{"session_id": "YOUR_SESSION_ID", "selector": "input", "text": "Hello"}}'</div>
-                    </div>
-                    
-                    <div class="endpoint">
-                        <span class="method method-get">GET</span>
-                        <strong>/agent/info</strong> - Get page title and URL
-                        <div class="code-block">curl "{base_url}/agent/info?session_id=YOUR_SESSION_ID"</div>
-                    </div>
-                    
-                    <div class="endpoint">
-                        <span class="method method-post">POST</span>
-                        <strong>/agent/close</strong> - Close browser session
-                        <div class="code-block">curl -X POST "{base_url}/agent/close" \\
-  -H "Content-Type: application/json" \\
-  -d '{{"session_id": "YOUR_SESSION_ID"}}'</div>
-                    </div>
-                    
-                    <div class="endpoint">
-                        <span class="method method-get">GET</span>
-                        <strong>/agent/sessions</strong> - List all active sessions
-                        <div class="code-block">curl "{base_url}/agent/sessions"</div>
-                    </div>
-                </div>
-                
-                <div class="example-section">
-                    <h2>🚀 Quick Start Example</h2>
-                    <div class="step">
-                        <h4>Step 1: Start a browser session</h4>
-                        <div class="code-block">curl -X POST "{base_url}/agent/visit" \\
+                    <div class="endpoint-group">
+                        <h3>Browser Session Management</h3>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-path">/agent/visit</span>
+                                <span class="endpoint-description">Start browser session and navigate to URL</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <p><strong>Description:</strong> Creates a new browser session and navigates to the specified URL. Returns a session_id for subsequent operations.</p>
+                                <div class="code-block">curl -X POST "{base_url}/agent/visit" \\
   -H "Content-Type: application/json" \\
   -d '{{"url": "https://google.com"}}'</div>
-                    </div>
-                    
-                    <div class="step">
-                        <h4>Step 2: Take a screenshot</h4>
-                        <div class="code-block">curl "{base_url}/agent/screenshot?session_id=RETURNED_SESSION_ID"</div>
-                    </div>
-                    
-                    <div class="step">
-                        <h4>Step 3: Close the session</h4>
-                        <div class="code-block">curl -X POST "{base_url}/agent/close" \\
+                                <div class="response-example">
+                                    <strong>Response:</strong>
+                                    <div class="code-block">{{"session_id": "abc123", "message": "Visited https://google.com", "headless": true}}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-path">/agent/close</span>
+                                <span class="endpoint-description">Close browser session</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl -X POST "{base_url}/agent/close" \\
   -H "Content-Type: application/json" \\
-  -d '{{"session_id": "RETURNED_SESSION_ID"}}'</div>
+  -d '{{"session_id": "YOUR_SESSION_ID"}}'</div>
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-get">GET</span>
+                                <span class="endpoint-path">/agent/sessions</span>
+                                <span class="endpoint-description">List all active sessions</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl "{base_url}/agent/sessions"</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint-group">
+                        <h3>Page Interaction</h3>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-path">/agent/click</span>
+                                <span class="endpoint-description">Click elements by CSS selector</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl -X POST "{base_url}/agent/click" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"session_id": "YOUR_SESSION_ID", "selector": "button.submit"}}'</div>
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-post">POST</span>
+                                <span class="endpoint-path">/agent/type</span>
+                                <span class="endpoint-description">Type text into form fields</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl -X POST "{base_url}/agent/type" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"session_id": "YOUR_SESSION_ID", "selector": "input[name=\\"search\\"]", "text": "Hello World"}}'</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="endpoint-group">
+                        <h3>Page Information</h3>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-get">GET</span>
+                                <span class="endpoint-path">/agent/screenshot</span>
+                                <span class="endpoint-description">Take full-page screenshot</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl "{base_url}/agent/screenshot?session_id=YOUR_SESSION_ID"</div>
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-get">GET</span>
+                                <span class="endpoint-path">/agent/info</span>
+                                <span class="endpoint-description">Get page title and URL</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl "{base_url}/agent/info?session_id=YOUR_SESSION_ID"</div>
+                            </div>
+                        </div>
+                        
+                        <div class="endpoint">
+                            <div class="endpoint-header" onclick="toggleEndpoint(this)">
+                                <span class="method method-get">GET</span>
+                                <span class="endpoint-path">/health</span>
+                                <span class="endpoint-description">Service health check</span>
+                            </div>
+                            <div class="endpoint-body">
+                                <div class="code-block">curl "{base_url}/health"</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="section">
-                    <h2>⚙️ Technical Details</h2>
-                    <div class="tech-info">
-                        <div class="tech-item">
-                            <strong>Framework</strong>
-                            FastAPI
+                <div id="ai-guide" class="tab-content">
+                    <div class="ai-section">
+                        <h3>🤖 AI Agent Integration Guide</h3>
+                        <p>This service is designed to be easily consumed by AI models. Here's how to integrate it effectively:</p>
+                    </div>
+                    
+                    <div class="workflow-grid">
+                        <div class="workflow-card">
+                            <h4>🎯 For AI Models</h4>
+                            <p>Describe web automation tasks in natural language. The API provides simple endpoints for all common browser actions.</p>
                         </div>
-                        <div class="tech-item">
-                            <strong>Browser Engine</strong>
-                            Chromium via Playwright
+                        <div class="workflow-card">
+                            <h4>🔄 Session Management</h4>
+                            <p>Always start with /agent/visit to get a session_id, then use it for all subsequent operations on that browser instance.</p>
                         </div>
-                        <div class="tech-item">
-                            <strong>Mode</strong>
-                            {'Headless' if get_browser_config()["headless"] else 'Headful'}
+                        <div class="workflow-card">
+                            <h4>🎨 CSS Selectors</h4>
+                            <p>Use standard CSS selectors for targeting elements: button, #id, .class, [attribute="value"]</p>
                         </div>
-                        <div class="tech-item">
-                            <strong>Platform</strong>
-                            {'Render Cloud' if is_render_environment() else 'Local Dev'}
+                        <div class="workflow-card">
+                            <h4>📱 Cross-Platform</h4>
+                            <p>Works on both local development and cloud deployment. Automatically adapts to environment.</p>
                         </div>
+                    </div>
+                    
+                    <h3>Common AI Workflows</h3>
+                    <div class="code-block">
+# 1. Web scraping workflow
+POST /agent/visit → GET /agent/info → GET /agent/screenshot → POST /agent/close
+
+# 2. Form filling workflow  
+POST /agent/visit → POST /agent/type → POST /agent/click → GET /agent/info → POST /agent/close
+
+# 3. Navigation workflow
+POST /agent/visit → POST /agent/click → GET /agent/screenshot → POST /agent/close
+                    </div>
+                </div>
+                
+                <div id="examples" class="tab-content">
+                    <h3>🚀 Complete Examples</h3>
+                    
+                    <h4>Example 1: Search Google</h4>
+                    <div class="code-block">
+# Step 1: Visit Google
+curl -X POST "{base_url}/agent/visit" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"url": "https://google.com"}}'
+
+# Step 2: Type in search box
+curl -X POST "{base_url}/agent/type" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"session_id": "SESSION_ID", "selector": "input[name=\\"q\\"]", "text": "OpenAI"}}'
+
+# Step 3: Click search button
+curl -X POST "{base_url}/agent/click" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"session_id": "SESSION_ID", "selector": "input[name=\\"btnK\\"]"}}'
+
+# Step 4: Take screenshot of results
+curl "{base_url}/agent/screenshot?session_id=SESSION_ID"
+
+# Step 5: Close session
+curl -X POST "{base_url}/agent/close" \\
+  -H "Content-Type: application/json" \\
+  -d '{{"session_id": "SESSION_ID"}}'
+                    </div>
+                    
+                    <h4>Example 2: JavaScript Integration</h4>
+                    <div class="code-block">
+async function automateWebsite(url) {{
+  // Start session
+  const visitResponse = await fetch('{base_url}/agent/visit', {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ url }})
+  }});
+  const {{ session_id }} = await visitResponse.json();
+  
+  // Get page info
+  const infoResponse = await fetch(`{base_url}/agent/info?session_id=${{session_id}}`);
+  const pageInfo = await infoResponse.json();
+  
+  // Close session
+  await fetch('{base_url}/agent/close', {{
+    method: 'POST',
+    headers: {{ 'Content-Type': 'application/json' }},
+    body: JSON.stringify({{ session_id }})
+  }});
+  
+  return pageInfo;
+}}
                     </div>
                 </div>
             </div>
         </div>
+        
+        <script>
+            function showTab(tabName) {{
+                // Hide all tab contents
+                document.querySelectorAll('.tab-content').forEach(tab => {{
+                    tab.classList.remove('active');
+                }});
+                
+                // Remove active class from all nav tabs
+                document.querySelectorAll('.nav-tab').forEach(tab => {{
+                    tab.classList.remove('active');
+                }});
+                
+                // Show selected tab content
+                document.getElementById(tabName).classList.add('active');
+                
+                // Add active class to clicked nav tab
+                event.target.classList.add('active');
+            }}
+            
+            function toggleEndpoint(header) {{
+                const body = header.nextElementSibling;
+                body.classList.toggle('expanded');
+            }}
+        </script>
     </body>
     </html>
     """
