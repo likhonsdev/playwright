@@ -18,10 +18,6 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python -m pip install -r requirements.txt"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
 args = "python -m playwright install chromium"
 
 [[workflows.workflow.tasks]]

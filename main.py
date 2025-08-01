@@ -64,19 +64,69 @@ async def shutdown_sessions():
 @app.get("/")
 def root():
     return {
-        "message": "Browser Agent API is running",
-        "status": "ok",
-        "environment": "render" if is_render_environment() else "local",
-        "endpoints": {
-            "health": "/health",
-            "visit": "/agent/visit",
-            "click": "/agent/click", 
-            "type": "/agent/type",
-            "screenshot": "/agent/screenshot",
-            "info": "/agent/info",
-            "close": "/agent/close",
-            "sessions": "/agent/sessions"
-        }
+        "title": "🤖 Browser Agent API",
+        "description": "FastAPI-based browser automation service using Playwright",
+        "version": "1.0.0",
+        "status": "✅ Running",
+        "environment": "🌐 Render" if is_render_environment() else "🏠 Local",
+        "mode": "🔒 Headless" if get_browser_config()["headless"] else "👁️ Headful",
+        
+        "📚 API Documentation": {
+            "interactive_docs": "/docs",
+            "redoc": "/redoc"
+        },
+        
+        "🛠️ Available Endpoints": {
+            "GET /": "Show this documentation",
+            "GET /health": "Health check with environment info",
+            "POST /agent/visit": "Launch browser and visit a URL",
+            "POST /agent/click": "Click on elements by selector",
+            "POST /agent/type": "Fill form fields with text",
+            "GET /agent/screenshot": "Take a full-page screenshot",
+            "GET /agent/info": "Get page title and URL",
+            "POST /agent/close": "Close browser session",
+            "GET /agent/sessions": "List all active sessions"
+        },
+        
+        "📝 Usage Examples": {
+            "start_session": {
+                "method": "POST",
+                "url": "/agent/visit",
+                "body": {"url": "https://example.com"},
+                "response": {"session_id": "uuid", "message": "Visited https://example.com"}
+            },
+            "take_screenshot": {
+                "method": "GET", 
+                "url": "/agent/screenshot?session_id=YOUR_SESSION_ID",
+                "response": {"screenshot_path": "session_id.png"}
+            },
+            "click_element": {
+                "method": "POST",
+                "url": "/agent/click",
+                "body": {"session_id": "YOUR_SESSION_ID", "selector": "button"},
+                "response": {"message": "Clicked button"}
+            },
+            "type_text": {
+                "method": "POST",
+                "url": "/agent/type", 
+                "body": {"session_id": "YOUR_SESSION_ID", "selector": "input", "text": "Hello"},
+                "response": {"message": "Typed into input"}
+            }
+        },
+        
+        "🔧 Environment Details": {
+            "platform": "render" if is_render_environment() else "local",
+            "headless_mode": get_browser_config()["headless"],
+            "browser_args": get_browser_config().get("args", "default")
+        },
+        
+        "💡 Tips": [
+            "Visit /docs for interactive Swagger UI documentation",
+            "All POST requests require Content-Type: application/json",
+            "Session IDs are required for most operations after visiting a page",
+            "Screenshots are saved with session_id.png filename",
+            "Always close sessions when done to free resources"
+        ]
     }
 
 @app.get("/health")
