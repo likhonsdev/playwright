@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Dict
 import asyncio
 import uuid
+import os
 from playwright.async_api import async_playwright
 
 app = FastAPI()
@@ -19,6 +20,29 @@ app.add_middleware(
 
 sessions: Dict[str, object] = {}  # Store browser sessions
 
+def is_render_environment():
+    """Detect if running on Render platform"""
+    return os.getenv("RENDER") is not None or os.getenv("RENDER_SERVICE_ID") is not None
+
+def get_browser_config():
+    """Get browser configuration based on environment"""
+    if is_render_environment():
+        # Render requires headless mode and specific args
+        return {
+            "headless": True,
+            "args": [
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--no-first-run",
+                "--no-zygote",
+                "--single-process"
+            ]
+        }
+    else:
+        # Local development - can use headful mode
+        return {"headless": False}
 class VisitRequest(BaseModel):
     url: str
 
@@ -39,19 +63,28 @@ async def shutdown_sessions():
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "environment": "render" if is_render_environment() else "local",
+        "headless_mode": get_browser_config()["headless"]
+    }
 
 @app.post("/agent/visit")
 async def visit_page(req: VisitRequest):
     try:
         playwright = await async_playwright().start()
-        browser = await playwright.chromium.launch(headless=True)
+        browser_config = get_browser_config()
+        browser = await playwright.chromium.launch(**browser_config)
         page = await browser.new_page()
         await page.goto(req.url)
 
         session_id = str(uuid.uuid4())
         sessions[session_id] = {"browser": browser, "page": page}
-        return {"session_id": session_id, "message": f"Visited {req.url}"}
+        return {
+            "session_id": session_id, 
+            "message": f"Visited {req.url}",
+            "headless": browser_config["headless"]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
