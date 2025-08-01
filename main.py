@@ -63,70 +63,113 @@ async def shutdown_sessions():
 
 @app.get("/")
 def root():
+    base_url = "https://playwright-bqap.onrender.com" if is_render_environment() else "http://localhost:5000"
     return {
-        "title": "🤖 Browser Agent API",
-        "description": "FastAPI-based browser automation service using Playwright",
+        "service": "Browser Agent API",
+        "description": "Professional browser automation service using Playwright",
         "version": "1.0.0",
-        "status": "✅ Running",
-        "environment": "🌐 Render" if is_render_environment() else "🏠 Local",
-        "mode": "🔒 Headless" if get_browser_config()["headless"] else "👁️ Headful",
+        "status": "online",
+        "environment": "production" if is_render_environment() else "development",
+        "base_url": base_url,
         
-        "📚 API Documentation": {
-            "interactive_docs": "/docs",
-            "redoc": "/redoc"
+        "documentation": {
+            "interactive_swagger": f"{base_url}/docs",
+            "redoc_documentation": f"{base_url}/redoc",
+            "health_check": f"{base_url}/health"
         },
         
-        "🛠️ Available Endpoints": {
-            "GET /": "Show this documentation",
-            "GET /health": "Health check with environment info",
-            "POST /agent/visit": "Launch browser and visit a URL",
-            "POST /agent/click": "Click on elements by selector",
-            "POST /agent/type": "Fill form fields with text",
-            "GET /agent/screenshot": "Take a full-page screenshot",
-            "GET /agent/info": "Get page title and URL",
-            "POST /agent/close": "Close browser session",
-            "GET /agent/sessions": "List all active sessions"
-        },
-        
-        "📝 Usage Examples": {
-            "start_session": {
-                "method": "POST",
-                "url": "/agent/visit",
-                "body": {"url": "https://example.com"},
-                "response": {"session_id": "uuid", "message": "Visited https://example.com"}
+        "endpoints": [
+            {
+                "method": "GET",
+                "path": "/",
+                "description": "API documentation and status"
             },
-            "take_screenshot": {
+            {
                 "method": "GET", 
-                "url": "/agent/screenshot?session_id=YOUR_SESSION_ID",
-                "response": {"screenshot_path": "session_id.png"}
+                "path": "/health",
+                "description": "Service health check"
             },
-            "click_element": {
+            {
                 "method": "POST",
-                "url": "/agent/click",
-                "body": {"session_id": "YOUR_SESSION_ID", "selector": "button"},
-                "response": {"message": "Clicked button"}
+                "path": "/agent/visit", 
+                "description": "Start browser session and visit URL",
+                "example": {
+                    "url": f"{base_url}/agent/visit",
+                    "body": {"url": "https://example.com"},
+                    "curl": f'curl -X POST "{base_url}/agent/visit" -H "Content-Type: application/json" -d \'{{"url": "https://example.com"}}\''
+                }
             },
-            "type_text": {
+            {
                 "method": "POST",
-                "url": "/agent/type", 
-                "body": {"session_id": "YOUR_SESSION_ID", "selector": "input", "text": "Hello"},
-                "response": {"message": "Typed into input"}
+                "path": "/agent/click",
+                "description": "Click element by CSS selector", 
+                "example": {
+                    "url": f"{base_url}/agent/click",
+                    "body": {"session_id": "uuid", "selector": "button"},
+                    "curl": f'curl -X POST "{base_url}/agent/click" -H "Content-Type: application/json" -d \'{{"session_id": "YOUR_SESSION_ID", "selector": "button"}}\''
+                }
+            },
+            {
+                "method": "POST", 
+                "path": "/agent/type",
+                "description": "Type text into form field",
+                "example": {
+                    "url": f"{base_url}/agent/type",
+                    "body": {"session_id": "uuid", "selector": "input", "text": "Hello World"},
+                    "curl": f'curl -X POST "{base_url}/agent/type" -H "Content-Type: application/json" -d \'{{"session_id": "YOUR_SESSION_ID", "selector": "input", "text": "Hello World"}}\''
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/agent/screenshot",
+                "description": "Take full-page screenshot",
+                "example": {
+                    "url": f"{base_url}/agent/screenshot?session_id=YOUR_SESSION_ID",
+                    "curl": f'curl "{base_url}/agent/screenshot?session_id=YOUR_SESSION_ID"'
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/agent/info", 
+                "description": "Get page title and URL",
+                "example": {
+                    "url": f"{base_url}/agent/info?session_id=YOUR_SESSION_ID",
+                    "curl": f'curl "{base_url}/agent/info?session_id=YOUR_SESSION_ID"'
+                }
+            },
+            {
+                "method": "POST",
+                "path": "/agent/close",
+                "description": "Close browser session",
+                "example": {
+                    "url": f"{base_url}/agent/close",
+                    "body": {"session_id": "uuid"},
+                    "curl": f'curl -X POST "{base_url}/agent/close" -H "Content-Type: application/json" -d \'{{"session_id": "YOUR_SESSION_ID"}}\''
+                }
+            },
+            {
+                "method": "GET",
+                "path": "/agent/sessions",
+                "description": "List all active sessions", 
+                "example": {
+                    "url": f"{base_url}/agent/sessions",
+                    "curl": f'curl "{base_url}/agent/sessions"'
+                }
             }
+        ],
+        
+        "quick_start": {
+            "step_1": f'curl -X POST "{base_url}/agent/visit" -H "Content-Type: application/json" -d \'{{"url": "https://google.com"}}\'',
+            "step_2": f'curl "{base_url}/agent/screenshot?session_id=RETURNED_SESSION_ID"',
+            "step_3": f'curl -X POST "{base_url}/agent/close" -H "Content-Type: application/json" -d \'{{"session_id": "RETURNED_SESSION_ID"}}\''
         },
         
-        "🔧 Environment Details": {
-            "platform": "render" if is_render_environment() else "local",
-            "headless_mode": get_browser_config()["headless"],
-            "browser_args": get_browser_config().get("args", "default")
-        },
-        
-        "💡 Tips": [
-            "Visit /docs for interactive Swagger UI documentation",
-            "All POST requests require Content-Type: application/json",
-            "Session IDs are required for most operations after visiting a page",
-            "Screenshots are saved with session_id.png filename",
-            "Always close sessions when done to free resources"
-        ]
+        "technical_details": {
+            "framework": "FastAPI",
+            "browser_engine": "Chromium via Playwright", 
+            "mode": "headless" if get_browser_config()["headless"] else "headful",
+            "deployment": "Render Cloud Platform" if is_render_environment() else "Local Development"
+        }
     }
 
 @app.get("/health")
@@ -194,12 +237,15 @@ async def get_info(session_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class CloseRequest(BaseModel):
+    session_id: str
+
 @app.post("/agent/close")
-async def close_browser(session_id: str):
+async def close_browser(req: CloseRequest):
     try:
-        await sessions[session_id]["browser"].close()
-        del sessions[session_id]
-        return {"message": f"Closed session {session_id}"}
+        await sessions[req.session_id]["browser"].close()
+        del sessions[req.session_id]
+        return {"message": f"Closed session {req.session_id}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
