@@ -6,6 +6,8 @@ from typing import Dict
 import asyncio
 import uuid
 import os
+import subprocess
+import sys
 from playwright.async_api import async_playwright
 
 app = FastAPI()
@@ -44,6 +46,34 @@ def get_browser_config():
     else:
         # Local development - can use headful mode
         return {"headless": False}
+
+async def ensure_browser_installed():
+    """Ensure Playwright browsers are installed"""
+    try:
+        # Try to check if chromium is available
+        playwright = await async_playwright().start()
+        browser_config = get_browser_config()
+        browser = await playwright.chromium.launch(**browser_config)
+        await browser.close()
+        await playwright.stop()
+        return True
+    except Exception as e:
+        if "Executable doesn't exist" in str(e):
+            try:
+                # Try to install browsers
+                result = subprocess.run([
+                    sys.executable, "-m", "playwright", "install", "chromium"
+                ], capture_output=True, text=True, timeout=300)
+                
+                if result.returncode == 0:
+                    return True
+                else:
+                    print(f"Browser installation failed: {result.stderr}")
+                    return False
+            except Exception as install_error:
+                print(f"Failed to install browsers: {install_error}")
+                return False
+        return False
 class VisitRequest(BaseModel):
     url: str
 
@@ -60,6 +90,8 @@ class TypeRequest(BaseModel):
 async def shutdown_sessions():
     for session in sessions.values():
         await session["browser"].close()
+        if "playwright" in session:
+            await session["playwright"].stop()
     sessions.clear()
 
 @app.get("/", response_class=HTMLResponse)
@@ -400,6 +432,14 @@ def health_check():
 @app.post("/agent/visit")
 async def visit_page(req: VisitRequest):
     try:
+        # Check if browsers are installed
+        browser_installed = await ensure_browser_installed()
+        if not browser_installed:
+            raise HTTPException(
+                status_code=500, 
+                detail="Browser installation failed. Please ensure Playwright browsers are installed with: python -m playwright install chromium"
+            )
+        
         playwright = await async_playwright().start()
         browser_config = get_browser_config()
         browser = await playwright.chromium.launch(**browser_config)
@@ -407,14 +447,19 @@ async def visit_page(req: VisitRequest):
         await page.goto(req.url)
 
         session_id = str(uuid.uuid4())
-        sessions[session_id] = {"browser": browser, "page": page}
+        sessions[session_id] = {"browser": browser, "page": page, "playwright": playwright}
         return {
             "session_id": session_id, 
             "message": f"Visited {req.url}",
-            "headless": browser_config["headless"]
+            "headless": browser_config["headless"],
+            "environment": "render" if is_render_environment() else "local"
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # More detailed error message
+        error_msg = str(e)
+        if "Executable doesn't exist" in error_msg:
+            error_msg = "Playwright browsers not installed. Run 'python -m playwright install chromium' to fix this."
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.post("/agent/click")
 async def click_element(req: ClickRequest):
@@ -460,7 +505,10 @@ class CloseRequest(BaseModel):
 @app.post("/agent/close")
 async def close_browser(req: CloseRequest):
     try:
-        await sessions[req.session_id]["browser"].close()
+        session = sessions[req.session_id]
+        await session["browser"].close()
+        if "playwright" in session:
+            await session["playwright"].stop()
         del sessions[req.session_id]
         return {"message": f"Closed session {req.session_id}"}
     except Exception as e:
