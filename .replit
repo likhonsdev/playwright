@@ -7,3 +7,23 @@ packages = ["gitFull", "libxcrypt", "playwright-driver"]
 
 [deployment]
 run = ["sh", "-c", "npm run dev"]
+
+[workflows]
+runButton = "Run FastAPI"
+
+[[workflows.workflow]]
+name = "Run FastAPI"
+author = 45821879
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m pip install -r requirements.txt"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m playwright install chromium"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -m uvicorn main:app --host 0.0.0.0 --port 5000 --reload"

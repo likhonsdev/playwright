@@ -61,6 +61,24 @@ async def shutdown_sessions():
         await session["browser"].close()
     sessions.clear()
 
+@app.get("/")
+def root():
+    return {
+        "message": "Browser Agent API is running",
+        "status": "ok",
+        "environment": "render" if is_render_environment() else "local",
+        "endpoints": {
+            "health": "/health",
+            "visit": "/agent/visit",
+            "click": "/agent/click", 
+            "type": "/agent/type",
+            "screenshot": "/agent/screenshot",
+            "info": "/agent/info",
+            "close": "/agent/close",
+            "sessions": "/agent/sessions"
+        }
+    }
+
 @app.get("/health")
 def health_check():
     return {
