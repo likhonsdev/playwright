@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Browser automation service using Playwright",
   "scripts": {
-    "install": "pip install -r requirements.txt && playwright install chromium",
-    "dev": "python -m uvicorn main:app --reload",
-    "start": "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}",
+    "install": "python3 -m pip install -r requirements.txt && python3 -m playwright install chromium",
+    "dev": "python3 -m uvicorn main:app --reload",
+    "start": "python3 -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}",
     "build": "echo 'Python project - no build step required'"
   },
   "keywords": ["playwright", "browser", "automation", "fastapi"],
