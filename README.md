@@ -42,7 +42,7 @@ A FastAPI-based browser automation service using Playwright. Supports both local
 2. Use these build/start commands:
    ```bash
    # Build Command
-   pip install -r requirements.txt && playwright install chromium
+   python3 -m ensurepip --upgrade && python3 -m pip install -r requirements.txt && python3 -m playwright install chromium
    
    # Start Command  
    uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -53,8 +53,8 @@ A FastAPI-based browser automation service using Playwright. Supports both local
 ## Run Locally
 
 ```bash
-pip install -r requirements.txt
-playwright install chromium
+python3 -m ensurepip --upgrade && python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
 uvicorn main:app --reload
 ```
 
